@@ -1,1 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f0ede5; padding: 20px; }
+h1 { text-align: center; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { border: 1px solid black; padding: 8px; text-align: center; }
+th { background-color: red; color: white; }
+tr.blocked { background-color: #f8d7da; } /* Blocked user highlight */
+button { padding: 5px 10px; cursor: pointer; border: none; border-radius: 4px; margin: 2px;}
+.edit { background-color: blue; color: white; }
+.delete { background-color: red; color: white; }
+.block { background-color: #6c757d; color: white; }
+.unblock { background-color: #28a745; color: white; }
+#userForm { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+#userForm input { padding: 5px; }
+</style>
+</head>
+<body>
 
+<h1>Admin Panel</h1>
+
+<div id="userForm">
+  <input type="text" id="username" placeholder="Username" required>
+  <input type="text" id="device_id" placeholder="Device ID" required>
+  <input type="text" id="key" placeholder="Key" required>
+  <input type="text" id="expirydate" placeholder="Expiry Date (DD-MM-YYYY)" required>
+  <label><input type="checkbox" id="allowoffline"> Allow Offline</label>
+  <button id="addBtn" onclick="addUser()">Add User</button>
+  <button id="updateBtn" style="display:none;" onclick="updateUser()">Update User</button>
+</div>
+
+<table id="userTable">
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Device ID</th>
+      <th>Key</th>
+      <th>Expiry Date</th>
+      <th>Allow Offline</th>
+      <th>Blocked</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+const REPO = "sumaiyaislamsani/administration";
+const FILE_PATH = "passwrdadmin.json";
+const TOKEN = "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"; // আপনার GitHub token
+let usersData = [];
+let editIndex = -1;
+
+// Load users from GitHub
+async function fetchUsers() {
+    try {
+        const res = await fetch("https://raw.githubusercontent.com/sumaiyaislamsani/administration/main/passwrdadmin.json");
+        usersData = await res.json();
+        populateTable(usersData);
+    } catch (err) {
+        console.error("Failed to load users:", err);
+        alert("Failed to load users from GitHub!");
+    }
+}
+
+// Populate table
+function populateTable(users) {
+    const tbody = document.getElementById("userTable").querySelector("tbody");
+    tbody.innerHTML = "";
+    users.forEach((user,index)=>{
+        const tr = document.createElement("tr");
+        if(user.blocked) tr.classList.add("blocked"); // Highlight blocked users
+        tr.innerHTML = `
+            <td>${user.username || ""}</td>
+            <td>${user.device_id}</td>
+            <td>${user.key}</td>
+            <td>${user.expirydate}</td>
+            <td>${user.Allowoffline}</td>
+            <td>${user.blocked ? "Yes" : "No"}</td>
+            <td>
+                <button class="edit" onclick="editUser(${index})">Edit</button>
+                <button class="delete" onclick="deleteUser(${index})">Delete</button>
+                ${user.blocked 
+                  ? `<button class="unblock" onclick="toggleBlock(${index}, false)">Unblock</button>` 
+                  : `<button class="block" onclick="toggleBlock(${index}, true)">Block</button>`}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Add User
+function addUser() {
+    const username = document.getElementById("username").value.trim();
+    const device_id = document.getElementById("device_id").value.trim();
+    const key = document.getElementById("key").value.trim();
+    const expirydate = document.getElementById("expirydate").value.trim();
+    const allowoffline = document.getElementById("allowoffline").checked;
+
+    if(!username||!device_id||!key||!expirydate){
+        alert("Please fill all fields!");
+        return;
+    }
+
+    if(!confirm(`Are you sure you want to add user "${username}"?`)) return;
+
+    usersData.push({username, device_id, key, expirydate, Allowoffline: allowoffline, blocked:false});
+    populateTable(usersData);
+    updateGitHubFile(usersData);
+    clearForm();
+}
+
+// Edit User
+function editUser(index){
+    editIndex = index;
+    const user = usersData[index];
+    document.getElementById("username").value = user.username || "";
+    document.getElementById("device_id").value = user.device_id;
+    document.getElementById("key").value = user.key;
+    document.getElementById("expirydate").value = user.expirydate;
+    document.getElementById("allowoffline").checked = user.Allowoffline;
+
+    document.getElementById("addBtn").style.display = "none";
+    document.getElementById("updateBtn").style.display = "inline-block";
+}
+
+// Update User
+function updateUser(){
+    if(editIndex<0) return;
+    const username = document.getElementById("username").value.trim();
+    const device_id = document.getElementById("device_id").value.trim();
+    const key = document.getElementById("key").value.trim();
+    const expirydate = document.getElementById("expirydate").value.trim();
+    const allowoffline = document.getElementById("allowoffline").checked;
+
+    if(!username||!device_id||!key||!expirydate){
+        alert("Please fill all fields!");
+        return;
+    }
+
+    if(!confirm(`Are you sure you want to update user "${username}"?`)) return;
+
+    const blocked = usersData[editIndex].blocked || false;
+
+    usersData[editIndex]={username, device_id, key, expirydate, Allowoffline: allowoffline, blocked};
+    populateTable(usersData);
+    updateGitHubFile(usersData);
+    clearForm();
+    editIndex=-1;
+    document.getElementById("addBtn").style.display="inline-block";
+    document.getElementById("updateBtn").style.display="none";
+}
+
+// Delete User
+function deleteUser(index){
+    if(confirm(`Are you sure you want to delete "${usersData[index].username}"?`)){
+        usersData.splice(index,1);
+        populateTable(usersData);
+        updateGitHubFile(usersData);
+    }
+}
+
+// Block/Unblock User
+function toggleBlock(index, block){
+    const action = block ? "block" : "unblock";
+    if(!confirm(`Are you sure you want to ${action} "${usersData[index].username}"?`)) return;
+
+    usersData[index].blocked = block;
+    populateTable(usersData);
+    updateGitHubFile(usersData);
+}
+
+// Clear form
+function clearForm(){
+    document.getElementById("username").value="";
+    document.getElementById("device_id").value="";
+    document.getElementById("key").value="";
+    document.getElementById("expirydate").value="";
+    document.getElementById("allowoffline").checked=false;
+}
+
+// Update GitHub JSON
+async function updateGitHubFile(users){
+    try{
+        const fileRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`,{
+            headers: {"Authorization": `token ${TOKEN}`}
+        });
+        const fileData = await fileRes.json();
+        const sha = fileData.sha;
+
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(users,null,2))));
+
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`,{
+            method:"PUT",
+            headers: {"Authorization": `token ${TOKEN}`},
+            body: JSON.stringify({
+                message:"Update users via admin panel",
+                content: content,
+                sha: sha
+            })
+        });
+        const result = await res.json();
+        console.log("GitHub update result:", result);
+    }catch(err){
+        console.error("Failed to update GitHub:",err);
+        alert("Failed to update GitHub file!");
+    }
+}
+
+// Initialize
+fetchUsers();
+</script>
+</body>
+</html>
