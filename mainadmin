@@ -9,5 +9,5 @@
   "Url": "https://dpmods.com",
   "ForceUpdate": false,
   "Reminder": "1m",      
-  "BtnTimer": 30s         
+  "BtnTimer": 0         
 }
