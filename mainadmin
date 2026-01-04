@@ -1,7 +1,7 @@
 {
-  "Version": "2.0",
+  "Version": "3.6.8",
   "Title": "UPDATE NOW",
-  "Subtitle": "New Version 2.0",
+  "Subtitle": "New Version 3.6.9",
   "Features": "Fixed Bugs,Enhanced Features",
   "Description": "A mandatory new version is available with enhanced security, improved performance, and important fixes.",
   "BtnLater": "LATER",
@@ -9,5 +9,5 @@
   "Url": "https://dpmods.com",
   "ForceUpdate": false,
   "Reminder": "1m",      
-  "BtnTimer": 0         
+  "BtnTimer": 30s         
 }
