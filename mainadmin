@@ -7,7 +7,7 @@
   "BtnLater": "LATER",
   "BtnUpdate": "UPDATE NOW",
   "Url": "https://dpmods.com",
-  "ForceUpdate": false,
+  "ForceUpdate": true,
   "Reminder": "1m",      
   "BtnTimer": 0         
 }
